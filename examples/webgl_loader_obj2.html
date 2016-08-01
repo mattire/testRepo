@@ -1,0 +1,255 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<title>three.js webgl - loaders - OBJ loader</title>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+		<style>
+			body {
+				font-family: Monospace;
+				background-color: #000;
+				color: #fff;
+				margin: 0px;
+				overflow: hidden;
+			}
+			#info {
+				color: #fff;
+				position: absolute;
+				top: 10px;
+				width: 100%;
+				text-align: center;
+				z-index: 100;
+				display:block;
+			}
+			#info a, .button { color: #f00; font-weight: bold; text-decoration: underline; cursor: pointer }
+		</style>
+	</head>
+
+	<body>
+		<div id="info">
+		<a href="http://threejs.org" target="_blank">three.js</a> - OBJLoader test
+		</div>
+
+		<script src="../build/three.js"></script>
+		<script src="js/loaders/OBJLoader.js"></script>
+        <script src="js/controls/FirstPersonControls2.js"></script>
+
+		<script>
+
+			var container;
+
+			var camera, scene, renderer;
+
+			var mouseX = 0, mouseY = 0;
+
+			var windowHalfX = window.innerWidth / 2;
+			var windowHalfY = window.innerHeight / 2;
+            var clock = new THREE.Clock();
+
+			init();
+			animate();
+
+
+			function init() {
+
+				container = document.createElement( 'div' );
+				document.body.appendChild( container );
+
+				camera = new THREE.PerspectiveCamera( 45, window.innerWidth / window.innerHeight, 1, 2000 );
+				//camera.position.z = 250;
+				camera.position.z = 150;
+                //camera.quaternion.
+
+				controls = new THREE.FirstPersonControls(camera);
+
+			    //controls.movementSpeed = 10;
+				controls.movementSpeed = 20;
+			    //controls.lookSpeed = 0.125;
+				controls.lookSpeed = 0.25;
+				controls.lookVertical = true;
+				controls.constrainVertical = true;
+			    //controls.constrainVertical = false;
+				//controls.verticalMin = 1.1;
+				//controls.verticalMax = 2.2;
+
+				// scene
+
+				scene = new THREE.Scene();
+
+				var ambient = new THREE.AmbientLight( 0x101030 );
+				scene.add( ambient );
+
+				var directionalLight = new THREE.DirectionalLight( 0xffeedd );
+				//directionalLight.position.set(0, 0, 1);
+				directionalLight.position.set(1, 1, 0);
+				scene.add( directionalLight );
+
+				// texture
+
+				var manager = new THREE.LoadingManager();
+				manager.onProgress = function ( item, loaded, total ) {
+
+					console.log( item, loaded, total );
+
+				};
+
+				var texture = new THREE.Texture();
+
+				var onProgress = function ( xhr ) {
+					if ( xhr.lengthComputable ) {
+						var percentComplete = xhr.loaded / xhr.total * 100;
+						console.log( Math.round(percentComplete, 2) + '% downloaded' );
+					}
+				};
+
+				var onError = function ( xhr ) {
+				};
+
+
+				var loader = new THREE.ImageLoader( manager );
+				loader.load( 'textures/UV_Grid_Sm.jpg', function ( image ) {
+
+					texture.image = image;
+					texture.needsUpdate = true;
+
+				} );
+
+				// model
+
+				var loader = new THREE.OBJLoader( manager );
+				//loader.load('obj/male02/male02.obj', function (object) {
+				//loader.load('obj/female02/female02.obj', function (object) {
+                loader.load( 'obj/out3.obj', function ( object ) {
+
+					object.traverse( function ( child ) {
+
+						if ( child instanceof THREE.Mesh ) {
+
+							child.material.map = texture;
+
+						}
+
+					} );
+
+					//object.position.y = -95;
+					object.position.y = 0;
+					object.position.z = 150;
+                    
+					scene.add( object );
+
+				}, onProgress, onError );
+
+				//
+
+				renderer = new THREE.WebGLRenderer();
+				renderer.setPixelRatio( window.devicePixelRatio );
+				renderer.setSize( window.innerWidth, window.innerHeight );
+				container.appendChild( renderer.domElement );
+
+				document.addEventListener( 'mousemove', onDocumentMouseMove, false );
+
+				//
+
+				window.addEventListener( 'resize', onWindowResize, false );
+
+			}
+
+			function onWindowResize() {
+
+				windowHalfX = window.innerWidth / 2;
+				windowHalfY = window.innerHeight / 2;
+
+				camera.aspect = window.innerWidth / window.innerHeight;
+				camera.updateProjectionMatrix();
+
+				renderer.setSize( window.innerWidth, window.innerHeight );
+
+			}
+
+			function onDocumentMouseMove( event ) {
+
+				//mouseX = ( event.clientX - windowHalfX ) / 2;
+				//mouseY = ( event.clientY - windowHalfY ) / 2;
+
+			}
+
+			//
+
+			function sleep(milliseconds) {
+			    var start = new Date().getTime();
+			    for (var i = 0; i < 1e7; i++) {
+			        if ((new Date().getTime() - start) > milliseconds) {
+			            break;
+			        }
+			    }
+			}
+
+			function animate() {
+			    //sleep(10);
+				requestAnimationFrame( animate );
+				render();
+
+			}
+
+			function render() {
+
+			    var timer = Date.now() * 0.0005;
+			    controls.update(clock.getDelta());
+
+			    //camera.position.x += (mouseX - camera.position.x) * .05;
+				//camera.position.y += ( - mouseY - camera.position.y ) * .05;
+
+                
+				//camera.lookAt( scene.position );
+
+				renderer.render( scene, camera );
+
+			}
+
+			
+            /*/
+			function animate() {
+
+			    setTimeout(function () {
+			        requestAnimationFrame(animate);
+			    }, 33);
+
+			    render();
+			    stats.update();
+
+			}
+
+            //var clock = new THREE.Clock();
+
+			function render() {
+
+			    var timer = Date.now() * 0.0005;
+
+			    controls.update(clock.getDelta());
+
+
+			    //camera.position.x = Math.cos( timer ) * 10;
+			    //camera.position.y = 2;
+			    //camera.position.z = Math.sin(timer) * 10;
+			    //camera.position.x = Math.cos(timer) * 10;
+			    //camera.position.y = 2;
+			    //camera.position.z = Math.sin(timer) * 10;
+
+
+			    //camera.lookAt(scene.position);
+
+			    particleLight.position.x = Math.sin(timer * 4) * 3009;
+			    particleLight.position.y = Math.cos(timer * 5) * 4000;
+			    particleLight.position.z = Math.cos(timer * 4) * 3009;
+
+			    THREE.AnimationHandler.update(clock.getDelta());
+
+			    renderer.render(scene, camera);
+
+			}
+            //*/
+
+		</script>
+
+	</body>
+</html>
