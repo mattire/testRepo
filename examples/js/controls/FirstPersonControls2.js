@@ -29,8 +29,7 @@ THREE.FirstPersonControls = function ( object, domElement ) {
 	this.heightMax = 1.0;
 
 	this.constrainVertical = false;
-	//this.verticalMin = 0;
-	this.verticalMin = -Math.PI;
+	this.verticalMin = 0;
 	this.verticalMax = Math.PI;
 
 	this.autoSpeedFactor = 0.0;
@@ -52,9 +51,6 @@ THREE.FirstPersonControls = function ( object, domElement ) {
     this.turnLeft = false;
     this.turnRight = false;
     this.turnDown = false;
-
-    this.rollLeft = false;
-    this.rollRight = false;
 
 
 	this.mouseDragOn = false;
@@ -152,79 +148,56 @@ THREE.FirstPersonControls = function ( object, domElement ) {
 
 		//event.preventDefault();
 	    console.log(event.keyCode);
+		switch ( event.keyCode ) {
+			case 38: /*up*/
+			case 87: /*W*/ this.moveForward = true; break;
 
-	    if (event.ctrlKey) {
-	        console.log('ctrl down');
-            
-	        switch (event.keyCode) {
-	            case 100: /*numpad 4*/ this.rollLeft = true; break;
-	            case 102: /*numpad 6*/ this.rollRight = true; break;
-	        }
+			case 37: /*left*/
+			case 65: /*A*/ this.moveLeft = true; break;
 
-	    } else {
+			case 40: /*down*/
+			case 83: /*S*/ this.moveBackward = true; break;
 
-		    switch ( event.keyCode ) {
-			    case 38: /*up*/
-			    case 87: /*W*/ this.moveForward = true; break;
+			case 39: /*right*/
+			case 68: /*D*/ this.moveRight = true; break;
 
-			    case 37: /*left*/
-			    case 65: /*A*/ this.moveLeft = true; break;
+			case 82: /*R*/ this.moveUp = true; break;
+			case 70: /*F*/ this.moveDown = true; break;
 
-			    case 40: /*down*/
-			    case 83: /*S*/ this.moveBackward = true; break;
-
-			    case 39: /*right*/
-			    case 68: /*D*/ this.moveRight = true; break;
-
-			    case 82: /*R*/ this.moveUp = true; break;
-			    case 70: /*F*/ this.moveDown = true; break;
-
-		        case 104: /*numpad 8*/ this.turnUp = true; break;
-		        case 100: /*numpad 4*/ this.turnLeft = true; break;
-		        case 102: /*numpad 6*/ this.turnRight = true; break;
-		        case 98:  /*numpad 2*/ this.turnDown = true; break;
-		    }
-
-	    }
-            
+		    case 104: /*numpad 8*/ this.turnUp = true; break;
+		    case 100: /*numpad 4*/ this.turnLeft = true; break;
+		    case 102: /*numpad 6*/ this.turnRight = true; break;
+		    case 98:  /*numpad 2*/ this.turnDown = true; break;
+			
+			case 84:  /*T*/ toggleTransparency();
+		}
 
 	};
 
 	this.onKeyUp = function ( event ) {
 
-	    if (event.ctrlKey) {
-	        console.log('ctrl down');
+		switch ( event.keyCode ) {
 
-	        switch (event.keyCode) {
-	            case 100: /*numpad 4*/ this.rollLeft = false; break;
-	            case 102: /*numpad 6*/ this.rollRight = false; break;
-	        }
+			case 38: /*up*/
+			case 87: /*W*/ this.moveForward = false; break;
 
-	    } else {
+			case 37: /*left*/
+			case 65: /*A*/ this.moveLeft = false; break;
 
-	        switch (event.keyCode) {
+			case 40: /*down*/
+			case 83: /*S*/ this.moveBackward = false; break;
 
-	            case 38: /*up*/
-	            case 87: /*W*/ this.moveForward = false; break;
+			case 39: /*right*/
+			case 68: /*D*/ this.moveRight = false; break;
 
-	            case 37: /*left*/
-	            case 65: /*A*/ this.moveLeft = false; break;
+			case 82: /*R*/ this.moveUp = false; break;
+			case 70: /*F*/ this.moveDown = false; break;
 
-	            case 40: /*down*/
-	            case 83: /*S*/ this.moveBackward = false; break;
-
-	            case 39: /*right*/
-	            case 68: /*D*/ this.moveRight = false; break;
-
-	            case 82: /*R*/ this.moveUp = false; break;
-	            case 70: /*F*/ this.moveDown = false; break;
-
-	            case 104: /*numpad 8*/ this.turnUp = false; break;
-	            case 100: /*numpad 4*/ this.turnLeft = false; break;
-	            case 102: /*numpad 6*/ this.turnRight = false; break;
-	            case 98:  /*numpad 2*/ this.turnDown = false; break;
-	        }
-	    }
+		    case 104: /*numpad 8*/ this.turnUp = false; break;
+		    case 100: /*numpad 4*/ this.turnLeft = false; break;
+		    case 102: /*numpad 6*/ this.turnRight = false; break;
+		    case 98:  /*numpad 2*/ this.turnDown = false; break;
+		}
 
 	};
 
@@ -277,9 +250,6 @@ THREE.FirstPersonControls = function ( object, domElement ) {
 		if (this.turnLeft) { this.lon -= factor * actualLookSpeed; }
 		if (this.turnRight) { this.lon += factor * actualLookSpeed; }
 
-		if (this.rollLeft) { this.theta -= 0.4; }
-		if (this.rollRight) { this.theta += 0.4; }
-
 
 		//this.lon += this.mouseX * actualLookSpeed;
 		////console.log(this.mouseX);
@@ -303,7 +273,6 @@ THREE.FirstPersonControls = function ( object, domElement ) {
 		targetPosition.y = position.y + 10 * Math.cos( this.phi );
 		targetPosition.z = position.z + 10 * Math.sin( this.phi ) * Math.sin( this.theta );
 
-        //this.object.
 		this.object.lookAt( targetPosition );
 
 	};
