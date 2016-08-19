@@ -4,15 +4,119 @@
  * @author paulirish / http://paulirish.com/
  */
 
-THREE.FirstPersonControls = function ( object, domElement ) {
+ 
+ 	// context menu start
+	
+	/**
+	* Variables.
+	*/
+	var taskItemClassName = 'task';
+	var menu = document.querySelector("#context-menu");
+	var menuState = 0;
+	var activeClassName = "context-menu--active";
+	
+	var active = "context-menu--active";
+	function toggleMenuOn() {
+		// var menu = document.querySelector("#context-menu");
+		var menu = document.getElementById("context-menu");
+		if ( menuState !== 1 ) {
+			menuState = 1;
+			menu.classList.add(active);
+		}
+	}
+	function toggleMenuOff() {
+		var menu = document.getElementById("context-menu");
+		if ( menuState !== 0 ) {
+			menuState = 0;
+			menu.classList.remove(activeClassName);
+		}
+	}
+	function menuItemListener( link ) {
+		//console.log( "Task ID - " + 
+		//	taskItemInContext.getAttribute("data-id") + 
+		//	", Task action - " + link.getAttribute("data-action"));
+		toggleMenuOff();
+	}
+	
+	function clickInsideElement( e, className ) {
+	  var el = e.srcElement || e.target;
 
+	  if ( el.classList.contains(className) ) {
+		return el;
+	  } else {
+		while ( el = el.parentNode ) {
+		  if ( el.classList && el.classList.contains(className) ) {
+			return el;
+		  }
+		}
+	  }
+
+	  return false;
+	}
+	
+	function clickListener() {
+		document.addEventListener( "click", function(e) {
+			var clickeElIsLink = clickInsideElement( e, contextMenuLinkClassName );
+
+			if ( clickeElIsLink ) {
+				e.preventDefault();
+				menuItemListener( clickeElIsLink );
+			} else {
+				var button = e.which || e.button;
+				if ( button === 1 ) {
+					toggleMenuOff();
+				}
+			}
+		});
+	}
+	function contextListener() {
+	  document.addEventListener( "contextmenu", function(e) {
+		taskItemInContext = clickInsideElement( e, taskItemClassName );
+
+		if ( taskItemInContext ) {
+		  e.preventDefault();
+		  toggleMenuOn();
+		  positionMenu(e);
+		} else {
+		  taskItemInContext = null;
+		  toggleMenuOff();
+		}
+	  });
+	}
+	
+	function contextmenu( event ) {
+		event.preventDefault();
+		console.log(event);
+		if( menuState==0){
+			toggleMenuOn();
+		} else {
+			toggleMenuOff();
+		}
+	}
+	var taskItemInContext;
+	var contextMenuLinkClassName = "context-menu__link";
+	contextListener();
+	clickListener();
+	// context menu stop
+
+ 
+//THREE.FirstPersonControls = function ( object, domElement ) {
+THREE.FirstPersonControls = function ( object, meshList, domElement ) {
+//THREE.FirstPersonControls = function ( object ) {
+
+	//domElement = undefined;
 	this.object = object;
 	this.target = new THREE.Vector3( 0, 0, 0 );
+	this.targetPosition = null;
+	this.objects = meshList;
 
 	this.domElement = ( domElement !== undefined ) ? domElement : document;
 
 	this.enabled = true;
 
+	this.raycaster = new THREE.Raycaster();
+	this.displayObjectInfo = false
+	
 	//this.movementSpeed = 1.0;
 	this.movementSpeed = 1000.0;
 	// this.lookSpeed = 0.005;
@@ -52,6 +156,7 @@ THREE.FirstPersonControls = function ( object, domElement ) {
     this.turnRight = false;
     this.turnDown = false;
 
+	
 
 	this.mouseDragOn = false;
 
@@ -81,7 +186,68 @@ THREE.FirstPersonControls = function ( object, domElement ) {
 		}
 
 	};
+	//*
+	this.addCube = function(position)
+	{
+		// var geo = new THREE.BoxGeometry( 10, 10, 10 );
+		var geo = new THREE.BoxGeometry( 5, 5, 5 );
+		var mat = new THREE.MeshLambertMaterial( { color: 0xFF0000 } ); 
+		var box = new THREE.Mesh(geo, mat);
+		box.position.copy(position);
+		
+		gscene.add(box);
+		//render();
+	}
+	
+	this.clickPositionGuess = function( distance, direction )
+	{
+		
+		var targetDirVector = new THREE.Vector3(0,0,0);
+		var camPos 			= new THREE.Vector3(0,0,0);
+		targetDirVector.copy( this.targetPosition);
+		camPos.copy(this.object.position);
+		// console.log("tdv:");
+		// console.log(targetDirVector);
+		// var unitDirVector = targetDirVector.divideScalar(this.targetPosition.length());		
+		var unitDirVector = direction;
+		// console.log("udv");
+		// console.log(unitDirVector);
+		var clickPosition = camPos.add(unitDirVector.multiplyScalar(distance));
+		
+		// console.log(targetDirVector);
+		// console.log(targetDirVector.length());
+		// console.log(unitDirVector);
+		
+		console.log("cam:");
+		console.log(this.object.position);
+		console.log("clic pos:");
+		console.log(clickPosition);
+		// alert(clickPosition.x +",  " + clickPosition.y +",  " + clickPosition.z);
+		this.addCube(clickPosition);
+		//this.addCube(this.object.position);
+	}
+	
+	this.rayCastGet = function( event )
+	{
+		
+		var mouse = new THREE.Vector2();
+		mouse.x = ( event.clientX / window.innerWidth ) * 2 - 1;
+		mouse.y = - ( event.clientY / window.innerHeight ) * 2 + 1;
+		this.raycaster.setFromCamera( mouse, this.object );
+	
 
+		
+		var intersects = this.raycaster.intersectObjects( this.objects );
+		
+		if ( intersects.length > 0 ) {
+
+			SELECTED = intersects[ 0 ].object;
+			console.log(intersects[ 0 ].distance);
+			console.log(SELECTED.geometry.name + ":" + SELECTED.geometry.uuid + ":" + SELECTED.name);
+			this.clickPositionGuess(intersects[ 0 ].distance, this.raycaster.ray.direction);
+		}
+	}
+//*/
 	this.onMouseDown = function ( event ) {
 
 		if ( this.domElement !== document ) {
@@ -93,13 +259,16 @@ THREE.FirstPersonControls = function ( object, domElement ) {
 		event.preventDefault();
 		event.stopPropagation();
 
+		
 		if ( this.activeLook ) {
 
 			switch ( event.button ) {
-
+				case 0: this.rayCastGet(event); break;
+				//case 0: this.displayObjectInfo = true; break;
+/*
 				case 0: this.moveForward = true; break;
 				case 2: this.moveBackward = true; break;
-
+	//*/
 			}
 
 		}
@@ -113,6 +282,7 @@ THREE.FirstPersonControls = function ( object, domElement ) {
 		event.preventDefault();
 		event.stopPropagation();
 
+		/*
 		if ( this.activeLook ) {
 
 			switch ( event.button ) {
@@ -123,9 +293,9 @@ THREE.FirstPersonControls = function ( object, domElement ) {
 			}
 
 		}
-
+		
 		this.mouseDragOn = false;
-
+		//*/
 	};
 
 	this.onMouseMove = function ( event ) {
@@ -146,59 +316,87 @@ THREE.FirstPersonControls = function ( object, domElement ) {
 
 	this.onKeyDown = function ( event ) {
 
+		isShift = !!window.event.shiftKey; // typecast to boolean
 		//event.preventDefault();
 	    console.log(event.keyCode);
-		switch ( event.keyCode ) {
-			case 38: /*up*/
-			case 87: /*W*/ this.moveForward = true; break;
+		if(!isShift){
+			switch ( event.keyCode ) {
+				case 38: /*up*/
+				case 87: /*W*/ this.moveForward = true; break;
 
-			case 37: /*left*/
-			case 65: /*A*/ this.moveLeft = true; break;
+				case 37: /*left*/
+				case 65: /*A*/ this.moveLeft = true; break;
 
-			case 40: /*down*/
-			case 83: /*S*/ this.moveBackward = true; break;
+				case 40: /*down*/
+				case 83: /*S*/ this.moveBackward = true; break;
 
-			case 39: /*right*/
-			case 68: /*D*/ this.moveRight = true; break;
+				case 39: /*right*/
+				case 68: /*D*/ this.moveRight = true; break;
 
-			case 82: /*R*/ this.moveUp = true; break;
-			case 70: /*F*/ this.moveDown = true; break;
+				case 82: /*R*/ this.moveUp = true; break;
+				case 70: /*F*/ this.moveDown = true; break;
 
-		    case 104: /*numpad 8*/ this.turnUp = true; break;
-		    case 100: /*numpad 4*/ this.turnLeft = true; break;
-		    case 102: /*numpad 6*/ this.turnRight = true; break;
-		    case 98:  /*numpad 2*/ this.turnDown = true; break;
-			
-			case 84:  /*T*/ toggleTransparency();
+				case 104: /*numpad 8*/ this.turnUp = true; break;
+				case 100: /*numpad 4*/ this.turnLeft = true; break;
+				case 102: /*numpad 6*/ this.turnRight = true; break;
+				case 98:  /*numpad 2*/ this.turnDown = true; break;
+				
+				case 84:  /*T*/ toggleTransparency();
+			}
+		} else {
+			switch ( event.keyCode ) {
+				case 38: /*up*/
+				case 87: /*W*/ {this.turnUp = true; break;}
+				case 37: /*left*/
+				case 65: /*A*/ this.turnLeft = true; break;
+				case 40: /*down*/
+				case 83: /*S*/ this.turnDown = true; break;
+				case 39: /*right*/
+				case 68: /*D*/ this.turnRight = true; break;
+			}
 		}
-
 	};
 
 	this.onKeyUp = function ( event ) {
 
-		switch ( event.keyCode ) {
+		isShift = !!window.event.shiftKey; // typecast to boolean	
+		if(!isShift){
+			switch ( event.keyCode ) {
 
-			case 38: /*up*/
-			case 87: /*W*/ this.moveForward = false; break;
+				case 38: /*up*/
+				case 87: /*W*/ 
+					if(!isShift){this.moveForward = false; break;}
+							else{this.turnUp = false; break;}
 
-			case 37: /*left*/
-			case 65: /*A*/ this.moveLeft = false; break;
+				case 37: /*left*/
+				case 65: /*A*/ this.moveLeft = false; break;
 
-			case 40: /*down*/
-			case 83: /*S*/ this.moveBackward = false; break;
+				case 40: /*down*/
+				case 83: /*S*/ this.moveBackward = false; break;
 
-			case 39: /*right*/
-			case 68: /*D*/ this.moveRight = false; break;
+				case 39: /*right*/
+				case 68: /*D*/ this.moveRight = false; break;
 
-			case 82: /*R*/ this.moveUp = false; break;
-			case 70: /*F*/ this.moveDown = false; break;
+				case 82: /*R*/ this.moveUp = false; break;
+				case 70: /*F*/ this.moveDown = false; break;
 
-		    case 104: /*numpad 8*/ this.turnUp = false; break;
-		    case 100: /*numpad 4*/ this.turnLeft = false; break;
-		    case 102: /*numpad 6*/ this.turnRight = false; break;
-		    case 98:  /*numpad 2*/ this.turnDown = false; break;
+				case 104: /*numpad 8*/ this.turnUp = false; break;
+				case 100: /*numpad 4*/ this.turnLeft = false; break;
+				case 102: /*numpad 6*/ this.turnRight = false; break;
+				case 98:  /*numpad 2*/ this.turnDown = false; break;
+			}
+		} else {
+			switch ( event.keyCode ) {
+				case 38: /*up*/
+				case 87: /*W*/ {this.turnUp = false; break;}
+				case 37: /*left*/
+				case 65: /*A*/ this.turnLeft = false; break;
+				case 40: /*down*/
+				case 83: /*S*/ this.turnDown = false; break;
+				case 39: /*right*/
+				case 68: /*D*/ this.turnRight = false; break;
+			}
 		}
-
 	};
 
 	this.update = function( delta ) {
@@ -266,23 +464,19 @@ THREE.FirstPersonControls = function ( object, domElement ) {
 
 		}
 
-		var targetPosition = this.target,
+		//var targetPosition = this.target,
+		this.targetPosition = this.target,
 			position = this.object.position;
 
-		targetPosition.x = position.x + 10 * Math.sin( this.phi ) * Math.cos( this.theta );
-		targetPosition.y = position.y + 10 * Math.cos( this.phi );
-		targetPosition.z = position.z + 10 * Math.sin( this.phi ) * Math.sin( this.theta );
+		this.targetPosition.x = position.x + 10 * Math.sin( this.phi ) * Math.cos( this.theta );
+		this.targetPosition.y = position.y + 10 * Math.cos( this.phi );
+		this.targetPosition.z = position.z + 10 * Math.sin( this.phi ) * Math.sin( this.theta );
 
-		this.object.lookAt( targetPosition );
+		this.object.lookAt( this.targetPosition );
 
 	};
 
-	function contextmenu( event ) {
-
-		event.preventDefault();
-
-	}
-
+	
 	this.dispose = function() {
 
 		this.domElement.removeEventListener( 'contextmenu', contextmenu, false );
